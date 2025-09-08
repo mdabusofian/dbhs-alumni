@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>DBHS Alumni — Premium Registration</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- jsPDF & QRious -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<style>
+  /* === Theme: Dark + Neon Accent === */
+  :root{
+    --bg-0: #050816;
+    --bg-1: #0b1226;
+    --accent: #00d1ff;
+    --accent-2: #7c3aed;
+    --card-bg: rgba(255,255,255,0.04);
+    --glass: rgba(255,255,255,0.05);
+  }
+  body{
+    background: radial-gradient(800px 400px at 10% 10%, rgba(124,58,237,0.12), transparent 20%),
+                linear-gradient(180deg,var(--bg-0),var(--bg-1));
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  /* Neon Glow helpers */
+  .neon {
+    color: var(--accent);
+    text-shadow: 0 0 8px rgba(0,209,255,0.12), 0 0 18px rgba(0,209,255,0.06);
+  }
+  .neon-btn {
+    box-shadow: 0 6px 30px rgba(0,209,255,0.06);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .neon-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,209,255,0.12); }
+
+  /* Glass cards */
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(8px);
+  }
+
+  /* small helpers */
+  .subtle { color: rgba(230,238,248,0.65); }
+  .muted { color: rgba(230,238,248,0.45); font-size: .95rem; }
+  .field { background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); color: #e6eef8; }
+  input[type="file"]::-webkit-file-upload-button { visibility: hidden; }
+
+  /* Card Preview specific */
+  .card-preview {
+    width: 760px;
+    max-width: 100%;
+    height: 420px;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+    background: #ffffff;
+    color: #071028;
+  }
+  .card-left, .card-right { flex:1; padding:20px; display:flex; flex-direction:column; gap:8px; position:relative; }
+  .card-left { border-right: 1px solid #f0f4f8; align-items:center; justify-content:flex-start; }
+  .card-right { justify-content:flex-start; padding-top:28px; }
+  .card-logo { width:84px; height:34px; object-fit:contain; }
+  .card-photo { width:120px; height:120px; border-radius:999px; object-fit:cover; border:4px solid #ffd34d; box-shadow: 0 6px 18px rgba(2,6,23,0.15); }
+  .card-name { font-weight:700; font-size:18px; color:#04102a; }
+  .card-meta { color:#1f2b3a; font-size:13px; }
+  .card-event-title { font-weight:700; color:#071028; font-size:16px; margin-bottom:4px; }
+  .card-qr { position:absolute; right:18px; bottom:18px; width:86px; height:86px; border-radius:8px; background:white; display:grid; place-items:center; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
+  .divider { height:1px; background:linear-gradient(90deg,#f3f6fb00,#f3f6fb); margin:8px 0; opacity:.6; }
+
+  /* Responsive tweaks */
+  @media (max-width: 900px){
+    .card-preview { flex-direction:column; height:auto; }
+    .card-left { border-right: none; border-bottom: 1px solid #f0f4f8; padding-bottom:12px; }
+    .card-right { padding-top:12px; }
+  }
+
+  /* tiny icon style */
+  .icon-round { width:40px; height:40px; display:grid; place-items:center; border-radius:10px; background: linear-gradient(180deg, rgba(124,58,237,0.12), rgba(0,209,255,0.06)); color:var(--accent); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- PAGE LAYOUT -->
+<div class="max-w-6xl mx-auto px-6 py-8">
+
+  <!-- HEADER -->
+  <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+    <div>
+      <img src="https://via.placeholder.com/150x48?text=DBHS+Logo" alt="logo" class="card-logo mb-2"/>
+      <h1 class="text-3xl font-extrabold neon">Daulatpur Bohumukhi High School — Alumni</h1>
+      <p class="muted mt-1">Alumni Reunion 2025 — reconnect, celebrate, remember.</p>
+    </div>
+    <div class="flex gap-3 items-center mt-3 md:mt-0">
+      <a href="#event" class="px-4 py-2 rounded-lg glass subtle hover:scale-[1.02]">Event Details</a>
+      <a href="#registration" class="px-4 py-2 rounded-lg neon-btn bg-[rgba(0,209,255,0.08)] text-[--accent]">Register Now</a>
+    </div>
+  </header>
+
+  <!-- MAIN: two-column -->
+  <div class="grid lg:grid-cols-2 gap-8">
+
+    <!-- LEFT: Event details + lookup -->
+    <div class="space-y-6">
+
+      <!-- Event Cards -->
+      <section id="event" class="glass rounded-2xl p-5">
+        <h2 class="text-xl font-bold neon mb-3">Event Snapshot</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-lg glass flex gap-3 items-start">
+            <div class="icon-round">📅</div>
+            <div>
+              <div class="font-semibold">15 Dec 2025 — 10:00 AM</div>
+              <div class="muted">Date & Time</div>
+            </div>
+          </div>
+          <div class="p-4 rounded-lg glass flex gap-3 items-start">
+            <div class="icon-round">📍</div>
+            <div>
+              <div class="font-semibold">DBHS Main Hall</div>
+              <div class="muted">Venue</div>
+            </div>
+          </div>
+          <div class="p-4 rounded-lg glass flex gap-3 items-start">
+            <div class="icon-round">🎉</div>
+            <div>
+              <div class="font-semibold">Games, Talks, Cultural</div>
+              <div class="muted">Activities</div>
+            </div>
+          </div>
+          <div class="p-4 rounded-lg glass flex gap-3 items-start">
+            <div class="icon-round">💰</div>
+            <div>
+              <div class="font-semibold">Reunion 1500 BDT</div>
+              <div class="muted">Fees (per attendee)</div>
+            </div>
+          </div>
+        </div>
+        <p class="muted mt-4">Register early — limited seating. After payment you'll receive an Event ID. Use it anytime to re-download your card.</p>
+      </section>
+
+      <!-- Lookup by Event ID (placed high left) -->
+      <section class="glass rounded-2xl p-5">
+        <h3 class="text-lg font-semibold neon mb-2">Download card by Event ID</h3>
+        <div class="flex gap-2">
+          <input id="lookupEventIdTop" placeholder="EV-YYYYMMDD-1234" class="flex-1 rounded-lg p-3 field" />
+          <button id="lookupTopBtn" class="px-4 py-3 rounded-lg neon-btn bg-[rgba(0,209,255,0.08)]">Download</button>
+        </div>
+        <p class="muted mt-3">Paste your Event ID and click Download to get your PDF again.</p>
+      </section>
+
+      <!-- Info / How it works -->
+      <section class="glass rounded-2xl p-5">
+        <h3 class="text-lg font-semibold">How it works</h3>
+        <ol class="mt-3 space-y-2 list-decimal list-inside muted">
+          <li>Fill the registration form and upload a profile photo (optional).</li>
+          <li>Click <strong>Pay & Generate Card</strong> (demo payment simulated).</li>
+          <li>You'll get an <strong>Event ID</strong> — save it. Use it later to re-download the card.</li>
+          <li>Download PDF matches the preview exactly (printer-friendly white card).</li>
+        </ol>
+      </section>
+    </div>
+
+    <!-- RIGHT: Registration form + preview -->
+    <div class="space-y-6">
+
+      <!-- Registration Form -->
+      <section id="registration" class="glass rounded-2xl p-6">
+        <h2 class="text-xl font-bold neon mb-3">Registration</h2>
+
+        <form id="regForm" class="grid md:grid-cols-2 gap-4">
+          <div class="space-y-3">
+            <label class="block">
+              <span class="muted">Full name</span>
+              <input name="name" required class="mt-2 w-full rounded-md p-3 field" placeholder="Your full name" />
+            </label>
+
+            <label class="block">
+              <span class="muted">Email</span>
+              <input name="email" type="email" required class="mt-2 w-full rounded-md p-3 field" placeholder="you@example.com" />
+            </label>
+
+            <label class="block">
+              <span class="muted">Phone</span>
+              <input name="phone" required class="mt-2 w-full rounded-md p-3 field" placeholder="+8801XXXXXXXXX" />
+            </label>
+
+            <div class="grid grid-cols-2 gap-3">
+              <label>
+                <span class="muted">Batch</span>
+                <select name="batch" required class="mt-2 w-full rounded-md p-3 field">
+                  <option value="">Select batch</option>
+                  <option>9th Batch</option>
+                  <option>10th Batch</option>
+                  <option>11th Batch</option>
+                  <option>12th Batch</option>
+                </select>
+              </label>
+
+              <label>
+                <span class="muted">Passing Year</span>
+                <select name="passingYear" required class="mt-2 w-full rounded-md p-3 field" id="passingYear">
+                  <option value="">Year</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              <span class="muted">Program</span>
+              <select id="program" name="program" required class="mt-2 w-full rounded-md p-3 field">
+                <option value="">Choose program</option>
+                <option data-fee="1500">Reunion — 1500 BDT</option>
+                <option data-fee="1000">Workshop — 1000 BDT</option>
+                <option data-fee="800">Seminar — 800 BDT</option>
+              </select>
+            </label>
+
+            <label>
+              <span class="muted">Fee (BDT)</span>
+              <input id="fee" name="fee" type="number" required class="mt-2 w-full rounded-md p-3 field" />
+            </label>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block">
+              <span class="muted">Profile photo (optional)</span>
+              <div class="mt-2 flex items-center gap-3">
+                <div id="photoBox" class="w-24 h-24 rounded-full bg-[rgba(2,6,23,0.06)] flex items-center justify-center overflow-hidden border border-[rgba(255,255,255,0.04)]">
+                  <img id="photoPreview" src="" alt="preview" class="w-full h-full object-cover hidden" />
+                  <span id="photoEmoji" class="text-2xl subtle">🖼️</span>
+                </div>
+                <input id="photoInput" type="file" accept="image/*" class="field p-2 rounded-md w-full" />
+              </div>
+            </label>
+
+            <div class="glass rounded-md p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <div class="muted">Summary</div>
+                  <div class="font-semibold" id="summaryProgram">—</div>
+                </div>
+                <div class="text-right">
+                  <div class="muted">Fee</div>
+                  <div class="font-semibold" id="summaryFee">0 BDT</div>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="muted text-sm">Batch: <span id="summaryBatch">—</span> • Year: <span id="summaryYear">—</span></div>
+            </div>
+
+            <div class="flex gap-3 mt-2">
+              <button id="payBtn" type="button" class="flex-1 py-3 rounded-md neon-btn bg-[linear-gradient(90deg,var(--accent),var(--accent-2))] font-bold">Pay & Generate Card</button>
+              <button id="previewBtn" type="button" class="px-4 py-3 rounded-md glass subtle">Preview</button>
+            </div>
+
+            <div id="afterPayment" class="hidden space-y-2">
+              <div class="flex gap-2">
+                <input id="eventIdField" readonly class="flex-1 rounded-md p-3 field" />
+                <button id="downloadCardBtn" class="px-4 py-3 rounded-md bg-yellow-400 text-black font-semibold">Download</button>
+              </div>
+              <div class="muted text-sm">Save your Event ID — you can re-download card later by ID.</div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Live Card Preview -->
+      <section class="rounded-2xl">
+        <h3 class="text-lg font-semibold neon mb-3">Live Card Preview</h3>
+        <div id="cardPreview" class="card-preview overflow-hidden">
+          <!-- content injected by JS -->
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- SCRIPT: behaviour + PDF generation -->
+<script>
+(() => {
+  // DOM refs
+  const regForm = document.getElementById('regForm');
+  const programSel = document.getElementById('program');
+  const feeInput = document.getElementById('fee');
+  const passingYear = document.getElementById('passingYear');
+  const photoInput = document.getElementById('photoInput');
+  const photoPreview = document.getElementById('photoPreview');
+  const photoEmoji = document.getElementById('photoEmoji');
+  const payBtn = document.getElementById('payBtn');
+  const previewBtn = document.getElementById('previewBtn');
+  const cardPreviewEl = document.getElementById('cardPreview');
+  const summaryProgram = document.getElementById('summaryProgram');
+  const summaryFee = document.getElementById('summaryFee');
+  const summaryBatch = document.getElementById('summaryBatch');
+  const summaryYear = document.getElementById('summaryYear');
+  const afterPayment = document.getElementById('afterPayment');
+  const eventIdField = document.getElementById('eventIdField');
+  const downloadCardBtn = document.getElementById('downloadCardBtn');
+  const lookupEventIdTop = document.getElementById('lookupEventIdTop') || document.getElementById('lookupEventId');
+  const lookupTopBtn = document.getElementById('lookupTopBtn') || document.getElementById('lookupBtn');
+  const lookupEventId = lookupEventIdTop;
+  const lookupBtn = lookupTopBtn;
+
+  // populate passing year
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  for(let y=1990;y<=currentYear;y++){
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    passingYear.appendChild(opt);
+  }
+
+  // Helpers
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function generateEventId(){
+    const d = new Date();
+    const date = `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
+    const rnd = Math.floor(1000 + Math.random()*9000);
+    return `EV-${date}-${rnd}`;
+  }
+
+  // Summary update + preview
+  function updateSummary(){
+    const form = regForm;
+    summaryProgram.textContent = programSel.value || '—';
+    summaryFee.textContent = (feeInput.value || '0') + ' BDT';
+    summaryBatch.textContent = form.elements['batch'].value || '—';
+    summaryYear.textContent = form.elements['passingYear'].value || '—';
+  }
+
+  programSel.addEventListener('change', () => {
+    const fee = programSel.selectedOptions[0]?.dataset?.fee || 0;
+    if(fee) feeInput.value = fee;
+    updateSummary();
+  });
+  feeInput.addEventListener('input', updateSummary);
+  regForm.elements['batch'].addEventListener('change', updateSummary);
+  regForm.elements['passingYear'].addEventListener('change', updateSummary);
+  updateSummary();
+
+  // Photo preview
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files?.[0];
+    if(!file){ photoPreview.src=''; photoPreview.classList.add('hidden'); photoEmoji.classList.remove('hidden'); return; }
+    if(file.size > 2 * 1024 * 1024){ alert('Please pick an image < 2MB'); photoInput.value=''; return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      photoPreview.src = e.target.result;
+      photoPreview.classList.remove('hidden');
+      photoEmoji.classList.add('hidden');
+      renderCard(); // update preview automatically
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Render preview that matches PDF layout
+  function renderCard(dataOverride){
+    const form = regForm;
+    // derive data
+    const data = dataOverride || {
+      name: form.elements['name'].value || 'Full Name',
+      email: form.elements['email'].value || '',
+      phone: form.elements['phone'].value || '',
+      batch: form.elements['batch'].value || '—',
+      passingYear: form.elements['passingYear'].value || '—',
+      program: programSel.value || '—',
+      fee: feeInput.value || '0',
+      photoDataURL: photoPreview.src || '',
+      eventId: eventIdField.value || 'PREVIEW-0000',
+      eventName: 'Alumni Reunion 2025',
+      eventPurpose: 'Networking & Fun',
+      eventActivities: 'Games, Talks, Lunch, Cultural Program',
+      venue: 'DBHS Campus — Main Hall',
+      datetime: '15 Dec 2025, 10:00 AM'
+    };
+
+    // build DOM
+    cardPreviewEl.innerHTML = '';
+
+    const left = document.createElement('div');
+    left.className = 'card-left';
+
+    // top-left: logo small
+    const logo = document.createElement('img');
+    logo.src = 'https://via.placeholder.com/150x48?text=DBHS';
+    logo.style.width = '120px';
+    logo.style.objectFit = 'contain';
+    left.appendChild(logo);
+
+    // name & photo area
+    const photo = document.createElement('img');
+    photo.className = 'card-photo';
+    photo.src = data.photoDataURL || 'https://via.placeholder.com/120?text=No+Photo';
+    left.appendChild(photo);
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'card-name mt-1';
+    nameEl.textContent = data.name;
+    left.appendChild(nameEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'card-meta muted';
+    meta.innerHTML = `${data.batch} • ${data.passingYear} <br> ${data.program} • ${data.fee} BDT`;
+    left.appendChild(meta);
+
+    // right side: event details & id
+    const right = document.createElement('div');
+    right.className = 'card-right';
+
+    const eventTitle = document.createElement('div');
+    eventTitle.className = 'card-event-title';
+    eventTitle.textContent = data.eventName;
+    right.appendChild(eventTitle);
+
+    const eventInfo = document.createElement('div');
+    eventInfo.className = 'card-meta';
+    eventInfo.innerHTML = `<strong>When:</strong> ${data.datetime} <br>
+                           <strong>Where:</strong> ${data.venue} <br>
+                           <strong>Purpose:</strong> ${data.eventPurpose} <br>
+                           <strong>Activities:</strong> ${data.eventActivities}`;
+    right.appendChild(eventInfo);
+
+    // small divider
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    right.appendChild(divider);
+
+    // Event ID and contact small row
+    const idRow = document.createElement('div');
+    idRow.style.display = 'flex';
+    idRow.style.justifyContent = 'space-between';
+    idRow.style.alignItems = 'center';
+    idRow.style.gap = '10px';
+    idRow.innerHTML = `<div><strong>Event ID</strong><br><span style="font-weight:700">${data.eventId}</span></div>
+                       <div class="muted" style="text-align:right;font-size:12px">Show this at entry</div>`;
+    right.appendChild(idRow);
+
+    // QR
+    const qrWrap = document.createElement('div');
+    qrWrap.className = 'card-qr';
+    const qrCanvas = document.createElement('canvas');
+    qrWrap.appendChild(qrCanvas);
+    right.appendChild(qrWrap);
+    new QRious({ element: qrCanvas, value: data.eventId, size: 80 });
+
+    // footer small
+    const footer = document.createElement('div');
+    footer.className = 'card-footer';
+    footer.textContent = 'Issued by DBHS Alumni Association • Verify at entrance';
+    right.appendChild(footer);
+
+    // assemble
+    cardPreviewEl.appendChild(left);
+    cardPreviewEl.appendChild(right);
+  }
+
+  // initial preview
+  renderCard();
+
+  // preview button
+  previewBtn.addEventListener('click', () => {
+    updateSummary();
+    renderCard();
+    window.scrollTo({ top: cardPreviewEl.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+  });
+
+  // Pay & Generate (simulate payment)
+  payBtn.addEventListener('click', () => {
+    if(!regForm.checkValidity()){
+      regForm.reportValidity();
+      return;
+    }
+    // collect data
+    const data = {
+      name: regForm.elements['name'].value,
+      email: regForm.elements['email'].value,
+      phone: regForm.elements['phone'].value,
+      batch: regForm.elements['batch'].value,
+      passingYear: regForm.elements['passingYear'].value,
+      program: programSel.value,
+      fee: feeInput.value,
+      photoDataURL: photoPreview.src || '',
+      eventId: generateEventId(),
+      eventName: 'Alumni Reunion 2025',
+      eventPurpose: 'Networking & Fun',
+      eventActivities: 'Games, Talks, Lunch, Cultural Program',
+      venue: 'DBHS Campus — Main Hall',
+      datetime: '15 Dec 2025, 10:00 AM'
+    };
+
+    // save locally (demo)
+    localStorage.setItem('dbhs_alumni_' + data.eventId, JSON.stringify(data));
+
+    // show event id + enable download
+    eventIdField.value = data.eventId;
+    afterPayment.classList.remove('hidden');
+
+    // update summary & preview
+    updateSummary();
+    renderCard(data);
+
+    // wire download button to this saved data
+    downloadCardBtn.onclick = () => generateCardPDF(data);
+
+    alert('Payment simulated — Event ID: ' + data.eventId);
+  });
+
+  // PDF generator — matches preview layout (white card, left/right)
+  function generateCardPDF(data){
+    const { jsPDF } = window.jspdf;
+    // card proportion 500x350 points matches preview style (landscape-ish)
+    const doc = new jsPDF({ unit: 'pt', format: [500, 350] });
+    // fill white background (printer-friendly)
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,500,350,'F');
+
+    // Left: logo + photo + personal details
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(6,18,36);
+    doc.text('Event Entry Card', 20, 30);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(50,64,80);
+    doc.text('DBHS Alumni Association', 20, 46);
+
+    // photo: place at x=20,y=60 width=100
+    if(data.photoDataURL){
+      try { doc.addImage(data.photoDataURL, 'JPEG', 20, 60, 100, 100); }
+      catch(e){
+        // try PNG
+        try{ doc.addImage(data.photoDataURL, 'PNG', 20, 60, 100,100); } catch {}
+      }
+    } else {
+      // placeholder rectangle
+      doc.setDrawColor(200);
+      doc.rect(20,60,100,100);
+      doc.setFontSize(8);
+      doc.text('No Photo', 60, 110, { align: 'center' });
+    }
+
+    // personal details block
+    let y = 180;
+    doc.setFontSize(12); doc.setTextColor(20,30,45);
+    doc.text(`Name: ${data.name}`, 20, y); y += 16;
+    doc.text(`Batch: ${data.batch}`, 20, y); y += 16;
+    doc.text(`Passing Year: ${data.passingYear}`, 20, y); y += 16;
+    doc.text(`Program: ${data.program}`, 20, y); y += 16;
+    doc.text(`Fee: ${data.fee} BDT`, 20, y); y += 16;
+    doc.text(`Event ID: ${data.eventId}`, 20, y);
+
+    // Right: event info
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Event Details', 220, 60);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    let ey = 78;
+    doc.text(`Name: ${data.eventName}`, 220, ey); ey += 14;
+    doc.text(`When: ${data.datetime}`, 220, ey); ey += 14;
+    doc.text(`Where: ${data.venue}`, 220, ey); ey += 14;
+    doc.text(`Purpose: ${data.eventPurpose}`, 220, ey); ey += 14;
+    doc.text(`Activities: ${data.eventActivities}`, 220, ey); ey += 14;
+    doc.text(`Fee: ${data.fee} BDT`, 220, ey); ey += 14;
+
+    // QR bottom-right
+    const qr = new QRious({ value: data.eventId, size: 100 });
+    doc.addImage(qr.toDataURL(), 'PNG', 390, 240, 86, 86);
+
+    // footer small
+    doc.setFontSize(8); doc.setFont('helvetica','italic'); doc.setTextColor(110,110,110);
+    doc.text('Scan QR to verify at entrance', 20, 340);
+
+    const safeName = (data.name || 'member').trim().replace(/\s+/g,'_');
+    doc.save(`${safeName}_EventCard.pdf`);
+  }
+
+  // Top lookup button — download by event ID
+  lookupBtn.addEventListener('click', () => {
+    const id = lookupEventId.value?.trim();
+    if(!id){ alert('Enter an Event ID'); return; }
+    const raw = localStorage.getItem('dbhs_alumni_' + id);
+    if(!raw){ alert('Event ID not found (demo uses LocalStorage)'); return; }
+    const data = JSON.parse(raw);
+    // show preview & offer PDF
+    eventIdField.value = data.eventId;
+    afterPayment.classList.remove('hidden');
+    renderCard(data);
+    // immediate download
+    generateCardPDF(data);
+  });
+
+  // Also implement bottom lookup (if multiple lookup inputs exist)
+  try {
+    const bottomLookup = document.getElementById('lookupEventId');
+    const bottomBtn = document.getElementById('lookupBtn');
+    if(bottomLookup && bottomBtn){
+      bottomBtn.addEventListener('click', () => {
+        const id = bottomLookup.value?.trim();
+        if(!id){ alert('Enter an Event ID'); return; }
+        const raw = localStorage.getItem('dbhs_alumni_' + id);
+        if(!raw){ alert('Event ID not found (demo uses LocalStorage)'); return; }
+        const data = JSON.parse(raw);
+        eventIdField.value = data.eventId;
+        afterPayment.classList.remove('hidden');
+        renderCard(data);
+        generateCardPDF(data);
+      });
+    }
+  } catch(e){ /* ignore */ }
+
+  // small: clicking download button when afterPayment is filled
+  downloadCardBtn.addEventListener('click', () => {
+    const id = eventIdField.value?.trim();
+    if(!id){ alert('No Event ID'); return; }
+    const raw = localStorage.getItem('dbhs_alumni_' + id);
+    if(!raw){ alert('Event ID invalid'); return; }
+    const data = JSON.parse(raw);
+    generateCardPDF(data);
+  });
+
+  // live update preview when fields change
+  regForm.addEventListener('input', () => {
+    updateSummary();
+    renderCard();
+  });
+
+})();
+</script>
+</body>
+</html>
