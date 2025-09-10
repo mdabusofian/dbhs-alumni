@@ -362,7 +362,7 @@
 
       // Photo (if any)
       if (data.photoDataURL) {
-        try { doc.addImage(data.photoDataURL, 'JPEG', W-70, 54, 54, 54); } catch {}
+        try { doc.addImage(data.photoDataURL, 'JPEG', W-70, 16 54, 54); } catch {}
       }
 
       // Details
@@ -376,7 +376,7 @@
       line('Event ID', data.eventId);
 
       // QR Code (Event ID)
-      const qr = new QRious({ value: data.eventId, size: 70, level: 'M' });
+      const qr = new QRious({ value: data.eventId, size: 90, level: 'M' });
       const qrURL = qr.toDataURL('image/png');
       doc.addImage(qrURL, 'PNG', W-100, H-100, 84, 84);
 
